@@ -3,16 +3,21 @@
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Home, User, Settings, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
 
   const handleLogout = async () => {
     try {
@@ -28,7 +33,6 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    router.push("/");
     return null;
   }
 
