@@ -115,7 +115,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-center sm:my-8 lg:mb-8">
+          <div className="flex items-center my-8 lg:mb-8">
             <h1 className="text-2xl font-bold">Welcome, {user.email}</h1>
           </div>
 
