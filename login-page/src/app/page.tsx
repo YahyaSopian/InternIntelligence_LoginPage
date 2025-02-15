@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,10 +22,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Set persistence berdasarkan remember me
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      
       await signInWithEmailAndPassword(auth, email, password);
-      // Redirect or handle successful login
       console.log('Login successful!');
-    } catch (err) {
+    } catch (err: any) {
       setError('Failed to login. Please check your credentials.');
       console.error(err);
     }
@@ -69,11 +72,16 @@ export default function LoginPage() {
                 <input
                   type="checkbox"
                   id="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300"
                 />
                 <Label htmlFor="remember" className="text-sm">Remember me</Label>
               </div>
-              <Link href="#" className="text-sm text-blue-600 hover:underline">
+              <Link 
+                href="/forgot-password" 
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
