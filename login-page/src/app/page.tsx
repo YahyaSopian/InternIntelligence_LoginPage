@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
+import { validateEmail, validatePassword } from '@/lib/validation';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,20 +18,43 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validation, setValidation] = useState({
+    email: '',
+    password: ''
+  });
+  const router = useRouter();
+
+  // Redirect if already logged in
+  const { user, loading: authLoading } = useAuth('/dashboard');
+
+  const validateForm = () => {
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+    
+    setValidation({
+      email: emailError || '',
+      password: passwordError || ''
+    });
+
+    return !emailError && !passwordError;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setError('');
     setLoading(true);
 
     try {
-      // Set persistence berdasarkan remember me
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      
       await signInWithEmailAndPassword(auth, email, password);
-      console.log('Login successful!');
+      router.push('/dashboard'); // Redirect to dashboard after successful login
     } catch (err: any) {
-      setError('Failed to login. Please check your credentials.');
+      setError('Invalid email or password');
       console.error(err);
     }
 
@@ -38,24 +64,31 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-100">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+      <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
           <CardDescription className="text-center">
-            Enter your email and password to login to your account
+            Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
+          <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="m@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setValidation(prev => ({ ...prev, email: '' }));
+                }}
+                className={validation.email ? 'border-red-500' : ''}
                 required
               />
+              {validation.email && (
+                <p className="text-sm text-red-500">{validation.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -63,9 +96,16 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setValidation(prev => ({ ...prev, password: '' }));
+                }}
+                className={validation.password ? 'border-red-500' : ''}
                 required
               />
+              {validation.password && (
+                <p className="text-sm text-red-500">{validation.password}</p>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
